@@ -12,7 +12,7 @@ function Polis (){
     
     var tileOffsets = {
         0: 4,
-        1: 115,
+        1: 108,
         2: 10,
         3: 302,
         4: 2,
