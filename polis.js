@@ -1,4 +1,4 @@
-function Polis(){
+function Polis (){
     var maptiles;
 
     var tileIDs = {
@@ -44,6 +44,10 @@ function Polis(){
             else if (number < 0.5)
             {
                 res = tileIDs.wood;
+            }
+            else if (number < 0.65)
+            {
+                res = tileIDs.food;
             }
             else
             {
