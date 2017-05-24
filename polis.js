@@ -1,6 +1,15 @@
 function Polis(){
     var maptiles;
 
+    var tileOffs = {
+        0: 'wood',
+        1: 'food',
+        2: 'stone',
+        3: 'gold',
+        4: 'none',
+        5: 'gatherer'
+    };
+    
     var tileIDs = {
         wood: 0,
         food: 1,
@@ -8,6 +17,24 @@ function Polis(){
         gold: 3,
         none: 4,
         gatherer: 5
+    };
+
+
+    var makeResource = function(res, row, col) {
+	return createObject({components: {position: new cPosition(col * 32, 32 + (row * 32)), resource: new cResource(tileIDs[res]),
+					  drawable: new cDrawableResource()}}, this.map);
+    };
+    
+    var constructors = {
+	0: function(row, col){ return makeResource('wood', row, col);},
+	1: function(row, col){ return makeResource('food', row, col);},
+	2: function(row, col){ return makeResource('stone', row, col);},
+	3: function(row, col){ return makeResource('gold', row, col);},
+	5: function(row, col){ var ret = makeResource('gatherer', row, col);
+			       ret.components.resourcegatherer = new cResourceGatherer();
+			       ret.components.resourcegatherer.owner = ret;
+			       return ret;
+			     },
     };
     
     var tileOffsets = {
@@ -73,14 +100,15 @@ function Polis(){
 
 
 	// Create a settlement
-        var tmp = createObject({components: {position: new cPosition(2 * 32, 3 * 32), resourcegatherer: new cResourceGatherer(), drawable: new cDrawable(this.tiles.frames[tileOffsets[tileIDs.gatherer]])}}, this.map);
+        /*var tmp = createObject({components: {position: new cPosition(2 * 32, 3 * 32), resourcegatherer: new cResourceGatherer(), drawable: new cDrawable(this.tiles.frames[tileOffsets[tileIDs.gatherer]])}}, this.map);
 
-
-
+	var tmp2 = createObject({components: {position: new cPosition(4 * 32, 3 * 32), resourcegatherer: new cResourceGatherer(), drawable: new cDrawable(this.tiles.frames[tileOffsets[tileIDs.gatherer]])}}, this.map);
+	this.map[50] = tmp;
+	this.map[52] = tmp2;*/
 	// Initialize the starting selected build
 	currentBuild = {res: tileIDs.wood, sprite: function() { return new jaws.Sprite({image: tiles.frames[tileOffsets[this.res]], x: 768-34, y: 0});}};
-        this.map[50] = tmp;
-
+        
+	
 	// Setup key bindings
 	['1', '2', '3', '4', '6'].forEach(function (e) {
 	    jaws.on_keydown(e, _.partial(setBuilding, e - 1));
@@ -89,11 +117,13 @@ function Polis(){
 	// Bind mouse
 	document.onclick = function(){
 	    var clickSpot = clickToPosition();
-	    console.log(clickSpot.row + " " + clickSpot.col);
+//	    console.log(clickSpot.row + " " + clickSpot.col + " CURBUILD " + currentBuild.res);
 	    var clickIdx = positionToIndex(clickSpot.row, clickSpot.col, 24);
-	    console.log(clickIdx + map[clickIdx]);
-	    map[clickIdx].components.resource = new cResource(currentBuild.res);};
-	
+	    var tmpVal = (constructors[currentBuild.res])(clickSpot.row, clickSpot.col);
+	    map[clickIdx] = tmpVal;
+//	    console.log(clickIdx + map[clickIdx]);
+//	    map[clickIdx].components.resource = new cResource(currentBuild.res);};
+	}	
     };
     
     this.update = function()
@@ -112,7 +142,7 @@ function Polis(){
         jaws.context.fillRect(0, 0, 768, 32);
         jaws.context.fillStyle = "white";
         jaws.context.font = "28px Serif";
-        jaws.context.fillText("Wood: " + resources[tileIDs.wood] + " Food: " + resources[tileIDs.food] + " Stone: " + resources[tileIDs.stone] + " Gold: " + resources[tileIDs.gold], 8, 30);
+        jaws.context.fillText("W: " + resources[tileIDs.wood] + " F: " + resources[tileIDs.food] + " S: " + resources[tileIDs.stone] + " G: " + resources[tileIDs.gold], 8, 30);
 
 	currentBuild.sprite().draw();
     };
@@ -212,23 +242,26 @@ function Polis(){
         
         this.proc = function()
         {
-            var index = positionToIndex(Math.floor(this.owner.components.position.x / 32), Math.floor((this.owner.components.position.y - 32) / 32), 24);
+            var index = positionToIndex(Math.floor((this.owner.components.position.y - 32) / 32), Math.floor(this.owner.components.position.x / 32), 24);
             var adjacentTiles = [this.owner.map[index - 1], this.owner.map[index - 24], this.owner.map[index + 1], this.owner.map[index + 24]];
             _.each(adjacentTiles, function(elm, idx, l)
                    {
-                       console.log(elm);
-                       if (elm.components.resource)
-                       {
-                           console.log("resource " + elm.components.resource.resource);
-                           var rsc = elm.components.resource;
-                           console.log("rsc" + rsc);
-                           resource = rsc.resource;
-                           console.log(elm.components.position.x + ", " + elm.components.position.y);
-                           if (resource == tileIDs.food || resource == tileIDs.wood || resource == tileIDs.stone || resource == tileIDs.gold)
-                           {
-                               resources[resource] += 1;
-                           }
-                       }
+		       // Handle the (literal) edge case of being on a border.
+		       if (elm || true) {
+                       console.log(elm + " IS AN ADJACENT TILE");
+			   if (elm.components.resource)
+			   {
+			       //                           console.log("resource " + elm.components.resource.resource);
+                               var rsc = elm.components.resource;
+			       //                           console.log("rsc" + rsc);
+                               resource = rsc.resource;
+			       //                           console.log(elm.components.position.x + ", " + elm.components.position.y);
+                               if (resource == tileIDs.food || resource == tileIDs.wood || resource == tileIDs.stone || resource == tileIDs.gold)
+                               {
+				   resources[resource] += 1;
+                               }
+			   }
+		       }
             });
         };
     }
