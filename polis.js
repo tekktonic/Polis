@@ -247,8 +247,7 @@ function Polis(){
             _.each(adjacentTiles, function(elm, idx, l)
                    {
 		       // Handle the (literal) edge case of being on a border.
-		       if (elm || true) {
-                       console.log(elm + " IS AN ADJACENT TILE");
+		       if (elm) {
 			   if (elm.components.resource)
 			   {
 			       //                           console.log("resource " + elm.components.resource.resource);
